@@ -82,10 +82,7 @@ buffers are good candidates to be put on ~M-SPC~ and ~s-M-SPC~.
 
 It is recommended to add ~q~ to leave the transient-state.
 
-<<<<<<< HEAD
-*** Evilified buffers
-=======
-** [#B] Evilified buffers
+** Evilified buffers
 /Evilifying/ a buffer is to set the =evilified state= as the default
 state for the major mode of the buffer.
 
