@@ -1,7 +1,6 @@
 ;;; packages.el --- Scala Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -13,23 +12,33 @@
 (setq scala-packages
   '(
     ensime
+    flycheck
+    ggtags
+    helm-gtags
     noflet
+    org
+    scala-mode
     sbt-mode
-    scala-mode2
     ))
 
 (defun scala/init-ensime ()
   (use-package ensime
-    :commands (ensime-mode)
+    :defer t
     :init
+    ;; note ensime-mode is hooked to scala-mode-hook automatically by
+    ;; ensime-mode via an autoload
     (progn
-      (add-hook 'ensime-mode-hook 'scala/enable-eldoc)
+      (spacemacs/register-repl 'ensime 'ensime-inf-switch "ensime")
+      (when scala-enable-eldoc
+        (add-hook 'ensime-mode-hook 'scala/enable-eldoc))
       (add-hook 'scala-mode-hook 'scala/configure-flyspell)
       (add-hook 'scala-mode-hook 'scala/configure-ensime)
-      (add-hook 'scala-mode-hook 'scala/maybe-start-ensime))
+      (when scala-auto-start-ensime
+        (add-hook 'scala-mode-hook 'scala/maybe-start-ensime))
+      (add-to-list 'spacemacs-jump-handlers-scala-mode 'ensime-edit-definition))
     :config
     (progn
-      (setq user-emacs-ensime-directory ".cache/ensime")
+      (setq ensime-startup-dirname (expand-file-name "ensime" spacemacs-cache-directory))
 
       (evil-define-key 'insert ensime-mode-map
         (kbd ".") 'scala/completing-dot
@@ -64,7 +73,7 @@
         "Regenerate `.ensime' file and restart the ensime server."
         (interactive)
         (progn
-          (sbt-command "gen-ensime")
+          (sbt-command ";ensimeConfig;ensimeConfigProject")
           (ensime-shutdown)
           (ensime)))
 
@@ -82,106 +91,191 @@
         (ensime-inf-eval-region start end)
         (evil-insert-state))
 
-      (evil-leader/set-key-for-mode 'scala-mode
-        "m/"     'ensime-search
+      (dolist (prefix '(("mb" . "scala/build")
+                        ("mc" . "scala/check")
+                        ("md" . "scala/debug")
+                        ("me" . "scala/errors")
+                        ("mg" . "scala/goto")
+                        ("mh" . "scala/docs")
+                        ("mi" . "scala/inspect")
+                        ("mn" . "scala/ensime")
+                        ("mr" . "scala/refactor")
+                        ("mt" . "scala/test")
+                        ("ms" . "scala/repl")
+                        ("my" . "scala/yank")))
+        (spacemacs/declare-prefix-for-mode 'scala-mode (car prefix) (cdr prefix)))
 
-        "mbc"     'ensime-sbt-do-compile
-        "mbC"     'ensime-sbt-do-clean
-        "mbi"     'ensime-sbt-switch
-        "mbp"     'ensime-sbt-do-package
-        "mbr"     'ensime-sbt-do-run
+      (spacemacs/set-leader-keys-for-major-mode 'scala-mode
+        "/"      'ensime-search
+        "'"      'ensime-inf-switch
 
-        "mct"     'ensime-typecheck-current-file
-        "mcT"     'ensime-typecheck-all
+        "bc"     'ensime-sbt-do-compile
+        "bC"     'ensime-sbt-do-clean
+        "bi"     'ensime-sbt-switch
+        "bp"     'ensime-sbt-do-package
+        "br"     'ensime-sbt-do-run
 
-        "mdA"     'ensime-db-attach
-        "mdb"     'ensime-db-set-break
-        "mdB"     'ensime-db-clear-break
-        "mdC"     'ensime-db-clear-all-breaks
-        "mdc"     'ensime-db-continue
-        "mdd"     'ensime-db-start
-        "mdi"     'ensime-db-inspect-value-at-point
-        "mdl"     'ensime-db-list-locals
-        "mdn"     'ensime-db-next
-        "mdo"     'ensime-db-step-out
-        "mdq"     'ensime-db-quit
-        "mdr"     'ensime-db-run
-        "mds"     'ensime-db-step
-        "mdt"     'ensime-db-backtrace
+        "ct"     'ensime-typecheck-current-buffer
+        "cT"     'ensime-typecheck-all
 
-        "mee"     'ensime-print-errors-at-point
-        "mel"     'ensime-show-all-errors-and-warnings
-        "mes"     'ensime-stacktrace-switch
+        "dA"     'ensime-db-attach
+        "db"     'ensime-db-set-break
+        "dB"     'ensime-db-clear-break
+        "dC"     'ensime-db-clear-all-breaks
+        "dc"     'ensime-db-continue
+        "di"     'ensime-db-step
+        "dn"     'ensime-db-next
+        "do"     'ensime-db-step-out
+        "dq"     'ensime-db-quit
+        "dr"     'ensime-db-run
+        "dt"     'ensime-db-backtrace
+        "dv"     'ensime-db-inspect-value-at-point
 
-        "mgg"     'ensime-edit-definition
-        "mgp"     'ensime-pop-find-definition-stack
-        "mgi"     'ensime-goto-impl
-        "mgt"     'ensime-goto-test
+        "ee"     'ensime-print-errors-at-point
+        "el"     'ensime-show-all-errors-and-warnings
+        "es"     'ensime-stacktrace-switch
 
-        "mhh"     'ensime-show-doc-for-symbol-at-point
-        "mhu"     'ensime-show-uses-of-symbol-at-point
-        "mht"     'ensime-print-type-at-point
+        "gp"     'ensime-pop-find-definition-stack
+        "gi"     'ensime-goto-impl
+        "gt"     'ensime-goto-test
 
-        "mii"     'ensime-inspect-type-at-point
-        "miI"     'ensime-inspect-type-at-point-other-frame
-        "mip"     'ensime-inspect-project-package
+        "hh"     'ensime-show-doc-for-symbol-at-point
+        "hT"     'ensime-type-at-point-full-name
+        "ht"     'ensime-type-at-point
+        "hu"     'ensime-show-uses-of-symbol-at-point
 
-        "mnF"     'ensime-reload-open-files
-        "mns"     'ensime
-        "mnS"     'ensime-gen-and-restart
+        "ii"     'ensime-inspect-type-at-point
+        "iI"     'ensime-inspect-type-at-point-other-frame
+        "ip"     'ensime-inspect-project-package
 
-        "mrd"     'ensime-refactor-inline-local
-        "mrD"     'ensime-undo-peek
-        "mrf"     'ensime-format-source
-        "mri"     'ensime-refactor-organize-imports
-        "mrm"     'ensime-refactor-extract-method
-        "mrr"     'ensime-refactor-rename
-        "mrt"     'ensime-import-type-at-point
-        "mrv"     'ensime-refactor-extract-local
+        "nF"     'ensime-reload-open-files
+        "ns"     'ensime
+        "nS"     'ensime-gen-and-restart
 
-        "mta"     'ensime-sbt-do-test
-        "mtr"     'ensime-sbt-do-test-quick
-        "mtt"     'ensime-sbt-do-test-only
+        "ra"     'ensime-refactor-add-type-annotation
+        "rd"     'ensime-refactor-diff-inline-local
+        "rD"     'ensime-undo-peek
+        "rf"     'ensime-format-source
+        "ri"     'ensime-refactor-diff-organize-imports
+        "rm"     'ensime-refactor-diff-extract-method
+        "rr"     'ensime-refactor-diff-rename
+        "rt"     'ensime-import-type-at-point
+        "rv"     'ensime-refactor-diff-extract-local
 
-        "msa"     'ensime-inf-load-file
-        "msb"     'ensime-inf-eval-buffer
-        "msB"     'ensime-inf-eval-buffer-switch
-        "msi"     'ensime-inf-switch
-        "msr"     'ensime-inf-eval-region
-        "msR"     'ensime-inf-eval-region-switch
+        "ta"     'ensime-sbt-do-test-dwim
+        "tr"     'ensime-sbt-do-test-quick-dwim
+        "tt"     'ensime-sbt-do-test-only-dwim
 
-        "mz"      'ensime-expand-selection-command
+        "sa"     'ensime-inf-load-file
+        "sb"     'ensime-inf-eval-buffer
+        "sB"     'ensime-inf-eval-buffer-switch
+        "si"     'ensime-inf-switch
+        "sr"     'ensime-inf-eval-region
+        "sR"     'ensime-inf-eval-region-switch
+
+        "yT"     'scala/yank-type-at-point-full-name
+        "yt"     'scala/yank-type-at-point
+
+        "z"      'ensime-expand-selection-command
         )
 
       ;; Don't use scala checker if ensime mode is active, since it provides
       ;; better error checking.
-      (eval-after-load 'flycheck
-        '(progn
-           (defun scala/disable-flycheck () (flycheck-mode -1))
-           (add-hook 'ensime-mode-hook 'scala/disable-flycheck))))))
+      (with-eval-after-load 'flycheck
+        (defun scala/disable-flycheck-scala ()
+          (push 'scala flycheck-disabled-checkers))
 
-(defun scala/init-noflet ())
+        (add-hook 'ensime-mode-hook 'scala/disable-flycheck-scala))
 
-(defun scala/init-sbt-mode ())
+      ;; Enable Expand Region integration from Ensime.  Ignore load errors to
+      ;; handle older Ensime versions gracefully.
+      (when (configuration-layer/package-usedp 'expand-region)
+        (require 'ensime-expand-region nil 'noerror)))))
 
-(defun scala/init-scala-mode2 ()
-  (use-package scala-mode2
+(defun scala/post-init-flycheck ()
+  (spacemacs/add-flycheck-hook 'scala-mode))
+
+(defun scala/init-noflet ()
+  (use-package noflet))
+
+(defun scala/pre-init-org ()
+  (spacemacs|use-package-add-hook org
+    :post-config (add-to-list 'org-babel-load-languages '(scala . t))))
+
+(defun scala/init-sbt-mode ()
+  (use-package sbt-mode
+    :defer t
+    :init (spacemacs/set-leader-keys-for-major-mode 'scala-mode
+            "b." 'sbt-hydra
+            "bb" 'sbt-command)))
+
+(defun scala/init-scala-mode ()
+  (use-package scala-mode
     :defer t
     :init
-    (dolist (ext '(".cfe" ".cfs" ".si" ".gen" ".lock"))
-      (add-to-list 'completion-ignored-extensions ext))
+    (progn
+      (dolist (ext '(".cfe" ".cfs" ".si" ".gen" ".lock"))
+        (add-to-list 'completion-ignored-extensions ext)))
     :config
     (progn
+      ;; Automatically insert asterisk in a comment when enabled
+      (defun scala/newline-and-indent-with-asterisk ()
+        (interactive)
+        (newline-and-indent)
+        (when scala-auto-insert-asterisk-in-comments
+          (scala-indent:insert-asterisk-on-multiline-comment)))
+
+      (evil-define-key 'insert scala-mode-map
+        (kbd "RET") 'scala/newline-and-indent-with-asterisk)
+
+      ;; Automatically replace arrows with unicode ones when enabled
+      (defconst scala-unicode-arrows-alist
+        '(("=>" . "⇒")
+          ("->" . "→")
+          ("<-" . "←")))
+
+      (defun scala/replace-arrow-at-point ()
+        "Replace the arrow before the point (if any) with unicode ones.
+An undo boundary is inserted before doing the replacement so that
+it can be undone."
+        (let* ((end (point))
+               (start (max (- end 2) (point-min)))
+               (x (buffer-substring start end))
+               (arrow (assoc x scala-unicode-arrows-alist)))
+          (when arrow
+            (undo-boundary)
+            (backward-delete-char 2)
+            (insert (cdr arrow)))))
+
+      (defun scala/gt ()
+        "Insert a `>' to the buffer. If it's part of a right arrow (`->' or `=>'),
+replace it with the corresponding unicode arrow."
+        (interactive)
+        (insert ">")
+        (scala/replace-arrow-at-point))
+
+      (defun scala/hyphen ()
+        "Insert a `-' to the buffer. If it's part of a left arrow (`<-'),
+replace it with the unicode arrow."
+        (interactive)
+        (insert "-")
+        (scala/replace-arrow-at-point))
+
+      (when scala-use-unicode-arrows
+        (define-key scala-mode-map
+          (kbd ">") 'scala/gt)
+        (define-key scala-mode-map
+          (kbd "-") 'scala/hyphen))
+
       (evil-define-key 'normal scala-mode-map "J" 'spacemacs/scala-join-line)
 
       ;; Compatibility with `aggressive-indent'
       (setq scala-indent:align-forms t
             scala-indent:align-parameters t
-            scala-indent:default-run-on-strategy scala-indent:operator-strategy)
+            scala-indent:default-run-on-strategy scala-indent:operator-strategy))))
 
-      (require 'noflet)
+(defun scala/post-init-ggtags ()
+  (add-hook 'scala-mode-local-vars-hook #'spacemacs/ggtags-mode-enable))
 
-      (defadvice scala-indent:indent-code-line (around retain-trailing-ws activate)
-        "Keep trailing-whitespace when indenting."
-        (noflet ((scala-lib:delete-trailing-whitespace ()))
-                ad-do-it)))))
+(defun scala/post-init-helm-gtags ()
+  (spacemacs/helm-gtags-define-keys-for-mode 'scala-mode))

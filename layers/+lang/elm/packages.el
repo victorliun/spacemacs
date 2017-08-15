@@ -1,7 +1,6 @@
 ;;; packages.el --- elm Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -15,25 +14,25 @@
       company
       elm-mode
       flycheck
-      flycheck-elm
+      (flycheck-elm :toggle (configuration-layer/package-usedp 'flycheck))
       popwin
       smartparens
       ))
 
 (defun elm/post-init-company ()
   (spacemacs|add-company-hook elm-mode)
-  (add-hook 'elm-mode-hook 'elm-oracle-setup-completion))
+  (add-hook 'elm-mode-hook 'elm-oracle-setup-completion)
+  (push 'company-elm company-backends-elm-mode))
 
 (defun elm/post-init-flycheck ()
-  (add-hook 'elm-mode-hook 'flycheck-mode))
+  (add-hook 'elm-mode-hook 'flycheck-mode)
+  (add-hook 'elm-mode-hook 'spacemacs//elm-find-root))
 
-(when (configuration-layer/layer-usedp 'syntax-checking)
-  (defun elm/init-flycheck-elm ()
-    "Initialize flycheck-elm"
-    (use-package flycheck-elm
-      :if (configuration-layer/package-usedp 'flycheck)
-      :defer t
-      :init (add-hook 'flycheck-mode-hook 'flycheck-elm-setup t))))
+(defun elm/init-flycheck-elm ()
+  "Initialize flycheck-elm"
+  (use-package flycheck-elm
+    :defer t
+    :init (add-hook 'flycheck-mode-hook 'flycheck-elm-setup t)))
 
 (defun elm/init-elm-mode ()
   "Initialize elm-mode"
@@ -41,6 +40,8 @@
     :mode ("\\.elm\\'" . elm-mode)
     :init
     (progn
+      (spacemacs/register-repl 'elm-mode 'elm-repl-load "elm")
+
       (defun spacemacs/init-elm-mode ()
         "Disable electric-indent-mode and let indentation cycling feature work"
         (if (fboundp 'electric-indent-local-mode)
@@ -51,58 +52,49 @@
     (progn
       (push "\\*elm\\*" spacemacs-useful-buffers-regexp)
 
-      (defun spacemacs/elm-compile-buffer-output ()
-        (interactive)
-        (let* ((fname (format "%s.js" (downcase (file-name-base (buffer-file-name))))))
-          (elm-compile--file (elm--buffer-local-file-name) fname)))
-
-      (defun spacemacs/push-decl-elm-repl-focus ()
-        "Send current function to the REPL and focus it in insert state."
-        (interactive)
-        (push-decl-elm-repl)
-        (run-elm-interactive)
-        (evil-insert-state))
-
-      (defun spacemacs/push-elm-repl-focus ()
-        "Send current region to the REPL and focus it in insert state."
-        (push-elm-repl)
-        (run-elm-interactive)
-        (evil-insert-state))
-
-      (evil-leader/set-key-for-mode 'elm-mode
+      (spacemacs/set-leader-keys-for-major-mode 'elm-mode
+        ;; format
+        "=b" 'elm-mode-format-buffer
         ;; make
-        "mcb" 'elm-compile-buffer
-        "mcB" 'spacemacs/elm-compile-buffer-output
-        "mcm" 'elm-compile-main
-
+        "cb" 'elm-compile-buffer
+        "cB" 'spacemacs/elm-compile-buffer-output
+        "cm" 'elm-compile-main
         ;; oracle
-        "mht" 'elm-oracle-type-at-point
-
+        "hh" 'elm-oracle-doc-at-point
+        "ht" 'elm-oracle-type-at-point
+        ;; refactoring
+        "ri" 'elm-sort-imports
         ;; repl
-        "msi" 'load-elm-repl
-        "msf" 'push-decl-elm-repl
-        "msF" 'spacemacs/push-decl-elm-repl-focus
-        "msr" 'push-elm-repl
-        "msR" 'spacemacs/push-elm-repl-focus
-
+        "'"  'elm-repl-load
+        "si" 'elm-repl-load
+        "sf" 'elm-repl-push-decl
+        "sF" 'spacemacs/elm-repl-push-decl-focus
+        "sr" 'elm-repl-push
+        "sR" 'spacemacs/elm-repl-push-focus
         ;; reactor
-        "mRn" 'elm-preview-buffer
-        "mRm" 'elm-preview-main
-
+        "Rn" 'elm-preview-buffer
+        "Rm" 'elm-preview-main
         ;; package
-        "mpi" 'elm-import
-        "mpc" 'elm-package-catalog
-        "mpd" 'elm-documentation-lookup)
+        "pi" 'elm-import
+        "pc" 'elm-package-catalog
+        "pd" 'elm-documentation-lookup)
 
-      (evilify elm-package-mode elm-package-mode-map
-               "g" 'elm-package-refresh
-               "n" 'elm-package-next
-               "p" 'elm-package-prev
-               "v" 'elm-package-view
-               "m" 'elm-package-mark
-               "u" 'elm-package-unmark
-               "x" 'elm-package-install
-               "q" 'quit-window))))
+      (dolist (x '(("m=" . "format")
+                   ("mc" . "compile")
+                   ("mh" . "help")
+                   ("mp" . "package")
+                   ("mR" . "reactor")
+                   ("mr" . "refactor")
+                   ("ms" . "repl")))
+        (spacemacs/declare-prefix-for-mode 'elm-mode (car x) (cdr x)))
+
+      (evilified-state-evilify elm-package-mode elm-package-mode-map
+        "g" 'elm-package-refresh
+        "v" 'elm-package-view
+        "m" 'elm-package-mark
+        "u" 'elm-package-unmark
+        "x" 'elm-package-install
+        "q" 'quit-window))))
 
 (defun elm/pre-init-popwin ()
   (spacemacs|use-package-add-hook popwin

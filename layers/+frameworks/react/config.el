@@ -1,7 +1,6 @@
 ;;; config.el --- react Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2015 Sylvain Benner
-;; Copyright (c) 2014-2015 Andrea Moretti & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Andrea Moretti <axyzxp@gmail.com>
 ;; URL: https://github.com/axyz
@@ -10,10 +9,8 @@
 ;;
 ;;; License: GPLv3
 
-;; Prerequisites
-
-(configuration-layer/declare-layers '(html javascript))
-
 ;; Variables
 
 (spacemacs|defvar-company-backends react-mode)
+
+(spacemacs|define-jump-handlers react-mode)

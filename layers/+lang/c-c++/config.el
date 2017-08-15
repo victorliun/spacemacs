@@ -1,7 +1,6 @@
-;;; packages.el --- C/C++ Layer packages File for Spacemacs
+;;; config.el --- C/C++ Layer config File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -17,6 +16,9 @@
 
 (spacemacs|defvar-company-backends c-mode-common)
 (spacemacs|defvar-company-backends cmake-mode)
+
+(spacemacs|define-jump-handlers c++-mode)
+(spacemacs|define-jump-handlers c-mode)
 
 (defvar c-c++-default-mode-for-headers 'c-mode
   "Default mode to open header files. Can be `c-mode' or `c++-mode'.")

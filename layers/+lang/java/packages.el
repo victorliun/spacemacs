@@ -1,26 +1,43 @@
 ;;; packages.el --- Java Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2015 Lukasz Klich
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Lukasz Klich <klich.lukasz@gmail.com>
+;; URL: https://github.com/syl20bnr/spacemacs
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
 
-(defvar java-packages
-  '(
-    emacs-eclim
-    company
-    ))
+(setq java-packages
+      '(
+        company
+        (company-emacs-eclim :toggle (configuration-layer/package-usedp 'company))
+        eclim
+        ggtags
+        helm-gtags
+        (java-mode :location built-in)
+        ))
 
-(defun java/init-emacs-eclim ()
+(defun java/post-init-company ()
+  (spacemacs|add-company-hook java-mode))
+
+(defun java/init-company-emacs-eclim ()
+  (use-package company-emacs-eclim
+    :defer t
+    :init (push 'company-emacs-eclim company-backends-java-mode)))
+
+(defun java/init-eclim ()
   (use-package eclim
     :defer t
-    :diminish eclim-mode
-    :init (add-hook 'java-mode-hook 'eclim-mode)
+    :init
+    (progn
+      (add-hook 'java-mode-hook 'eclim-mode)
+      (add-to-list 'spacemacs-jump-handlers-java-mode 'eclim-java-find-declaration))
     :config
     (progn
+      (spacemacs|hide-lighter eclim-mode)
+      (require 'eclimd)
       (setq help-at-pt-display-when-idle t
             help-at-pt-timer-delay 0.1)
       (help-at-pt-set-timer)
@@ -69,64 +86,78 @@
         (kbd "R") 'eclim-project-rename
         (kbd "q") 'eclim-quit-window)
 
-      (evil-leader/set-key-for-mode 'java-mode
-        "mea" 'eclim-problems-show-all
-        "meb" 'eclim-problems
-        "mec" 'eclim-problems-correct
-        "mee" 'eclim-problems-show-errors
-        "mef" 'eclim-problems-toggle-filefilter
-        "men" 'eclim-problems-next-same-window
-        "meo" 'eclim-problems-open
-        "mep" 'eclim-problems-previous-same-window
-        "mew" 'eclim-problems-show-warnings
+      (spacemacs/set-leader-keys-for-major-mode 'java-mode
+        "ea" 'eclim-problems-show-all
+        "eb" 'eclim-problems
+        "ec" 'eclim-problems-correct
+        "ee" 'eclim-problems-show-errors
+        "ef" 'eclim-problems-toggle-filefilter
+        "en" 'eclim-problems-next-same-window
+        "eo" 'eclim-problems-open
+        "ep" 'eclim-problems-previous-same-window
+        "ew" 'eclim-problems-show-warnings
 
-        "mff" 'eclim-java-find-generic
+        "ds" 'start-eclimd
+        "dk" 'stop-eclimd
 
-        "mgg" 'eclim-java-find-declaration
-        "mgt" 'eclim-java-find-type
+        "ff" 'eclim-java-find-generic
 
-        "mrc" 'eclim-java-constructor
-        "mrg" 'eclim-java-generate-getter-and-setter
-        "mrf" 'eclim-java-format
-        "mri" 'eclim-java-import-organize
-        "mrj" 'eclim-java-implement
-        "mrr" 'eclim-java-refactor-rename-symbol-at-point
+        "gt" 'eclim-java-find-type
 
-        "mhc" 'eclim-java-call-hierarchy
-        "mhh" 'eclim-java-show-documentation-for-current-element
-        "mhi" 'eclim-java-hierarchy
-        "mhu" 'eclim-java-find-references
+        "rc" 'eclim-java-constructor
+        "rg" 'eclim-java-generate-getter-and-setter
+        "rf" 'eclim-java-format
+        "ri" 'eclim-java-import-organize
+        "rj" 'eclim-java-implement
+        "rr" 'eclim-java-refactor-rename-symbol-at-point
 
-        "mmi" 'spacemacs/java-maven-clean-install
-        "mmI" 'spacemacs/java-maven-install
-        "mmp" 'eclim-maven-lifecycle-phases
-        "mmr" 'eclim-maven-run
-        "mmR" 'eclim-maven-lifecycle-phase-run
-        "mmt" 'spacemacs/java-maven-test
+        "hc" 'eclim-java-call-hierarchy
+        "hh" 'eclim-java-show-documentation-for-current-element
+        "hi" 'eclim-java-hierarchy
+        "hu" 'eclim-java-find-references
 
-        "maa" 'eclim-ant-run
-        "mac" 'eclim-ant-clear-cache
-        "mar" 'eclim-ant-run
-        "mav" 'eclim-ant-validate
+        "mi" 'spacemacs/java-maven-clean-install
+        "mI" 'spacemacs/java-maven-install
+        "mp" 'eclim-maven-lifecycle-phases
+        "mr" 'eclim-maven-run
+        "mR" 'eclim-maven-lifecycle-phase-run
+        "mt" 'spacemacs/java-maven-test
 
-        "mpb" 'eclim-project-build
-        "mpc" 'eclim-project-create
-        "mpd" 'eclim-project-delete
-        "mpg" 'eclim-project-goto
-        "mpi" 'eclim-project-import
-        "mpj" 'eclim-project-info-mode
-        "mpk" 'eclim-project-close
-        "mpo" 'eclim-project-open
-        "mpp" 'eclim-project-mode
-        "mpu" 'eclim-project-update
+        "aa" 'eclim-ant-run
+        "ac" 'eclim-ant-clear-cache
+        "ar" 'eclim-ant-run
+        "av" 'eclim-ant-validate
 
-        "mtt" 'eclim-run-junit)))
+        "pb" 'eclim-project-build
+        "pc" 'eclim-project-create
+        "pd" 'eclim-project-delete
+        "pg" 'eclim-project-goto
+        "pi" 'eclim-project-import
+        "pj" 'eclim-project-info-mode
+        "pk" 'eclim-project-close
+        "po" 'eclim-project-open
+        "pp" 'eclim-project-mode
+        "pu" 'eclim-project-update
 
-  (use-package company-emacs-eclim
-    :if (configuration-layer/package-usedp 'company)
-    :defer t
-    :init
-    (push 'company-emacs-eclim company-backends-java-mode)))
+        "tt" 'eclim-run-junit))))
 
-(defun java/post-init-company ()
-  (spacemacs|add-company-hook java-mode))
+(defun java/post-init-ggtags ()
+  (add-hook 'java-mode-local-vars-hook #'spacemacs/ggtags-mode-enable))
+
+(defun java/post-init-helm-gtags ()
+  (spacemacs/helm-gtags-define-keys-for-mode 'java-mode))
+
+(defun java/init-java-mode ()
+  (setq java/key-binding-prefixes '(("me" . "errors")
+                                    ("md" . "eclimd")
+                                    ("mf" . "find")
+                                    ("mg" . "goto")
+                                    ("mr" . "refactor")
+                                    ("mh" . "documentation")
+                                    ("mm" . "maven")
+                                    ("ma" . "ant")
+                                    ("mp" . "project")
+                                    ("mt" . "test")))
+  (mapc (lambda(x) (spacemacs/declare-prefix-for-mode
+                    'java-mode (car x) (cdr x)))
+        java/key-binding-prefixes))

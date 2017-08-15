@@ -1,14 +1,18 @@
-#+TITLE: Purescript contribution layer for Spacemacs
+#+TITLE: Purescript layer
 
 [[file:img/purescript-logo.png]]
 
-* Table of Contents                                                   :TOC@4:
+* Table of Contents                                         :TOC_4_gh:noexport:
  - [[#description][Description]]
  - [[#install][Install]]
+ - [[#configuration][Configuration]]
+   - [[#add-import-on-completion][Add import on completion]]
+   - [[#error-popup][Error popup]]
  - [[#key-bindings][Key bindings]]
-     - [[#purescript][Purescript]]
-         - [[#imports][Imports]]
-     - [[#repl][REPL]]
+   - [[#purescript][Purescript]]
+     - [[#imports][Imports]]
+     - [[#psc-ide][psc-ide]]
+   - [[#repl][REPL]]
 
 * Description
 
@@ -16,19 +20,29 @@ This layer provides basic Purescript editing support for spacemacs
 thanks to the following packages:
 - [[https://github.com/dysinger/purescript-mode][purescript-mode]]
 - [[https://github.com/ardumont/emacs-psci][psci]]
+- [[https://github.com/epost/psc-ide-emacs][psc-ide-emacs]]
 
 * Install
+To use this configuration layer, add it to your =~/.spacemacs=. You will need to
+add =purescript= to the existing =dotspacemacs-configuration-layers= list in
+this file.
 
-To use this contribution add it to your =~/.spacemacs=
+You'll also need to make sure the PureScript compiler and its associated
+binaries (psc-ide-server, psci,...) are on your path. Installation instructions
+can be found [[http://www.purescript.org/download/][here]].
 
-#+BEGIN_SRC emacs-lisp
-  (setq-default dotspacemacs-configuration-layers '(purescript))
-#+END_SRC
+* Configuration
+** Add import on completion
+Set =purescript-add-import-on-completion= to nil to make =psc-ide= stop adding
+imports on completion. Default value it =t=.
+
+** Error popup
+If you set =purescript-enable-rebuild-on-save= to non-nil, you will get a popup
+buffer showing you your current warnings/errors one at a time. This is primarily
+meant as an alternative to using flycheck. Default value is nil.
 
 * Key bindings
-
 ** Purescript
-
 *** Imports
 
 | Key Binding | Description                                                   |
@@ -38,8 +52,24 @@ To use this contribution add it to your =~/.spacemacs=
 | ~SPC m i a~ | Align imports                                                 |
 | ~SPC m i n~ | Navigate to the imports                                       |
 
-** REPL
+*** psc-ide
+=psc-ide= command are available under ~SPC m m~:
 
+| Key Binding   | Description                                                               |
+|---------------+---------------------------------------------------------------------------|
+| ~SPC m m s~   | Start psc-ide-server                                                      |
+| ~SPC m m l~   | Load definitions for the modules inside your project                      |
+| ~SPC m h t~   | Show type at point                                                        |
+| ~SPC m g g~   | Goto definition for identifier at point                                   |
+| ~SPC m m b~   | Rebuilds the current file and displays any warnings or errors             |
+| ~SPC m m i a~ | Add an import for the identifier at the current cursor position           |
+| ~SPC m m i s~ | Inserts a suggestion for the warning/error at the current cursor position |
+| ~SPC m m t~   | Add a new clause for the function signature at point                      |
+| ~SPC m m c s~ | Casesplits on the identifier at the current cursor position               |
+| ~SPC m m q~   | Quit the current psc-ide-server                                           |
+| ~SPC m m L~   | Load a specific module (This is mostly used for troubleshooting)          |
+
+** REPL
 [[https://github.com/ardumont/emacs-psci][psci]] provides a very basic REPL for purescript. The following key
 bindings are available:
 

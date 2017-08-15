@@ -1,7 +1,6 @@
 ;;; packages.el --- autohotkey Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Author: Rich Alesi <https://github.com/ralesi>
@@ -12,15 +11,16 @@
 ;;; License: GPLv3
 
 (setq autohotkey-packages
-  '(ahk-mode)) 
+  '(ahk-mode))
 
 (defun autohotkey/init-ahk-mode ()
   (use-package ahk-mode
-    :mode "\\.ahk$"
+    :mode "\\.ahk\\'"
     :defer t
     :init
-    (evil-leader/set-key-for-mode 'ahk-mode
-      "mcc" 'ahk-comment-dwim
-      "mcb" 'ahk-comment-block-dwim
-      "mh" 'ahk-lookup-web
-      "meb" 'ahk-run-script)))
+    (spacemacs/set-leader-keys-for-major-mode 'ahk-mode
+      "cb" 'ahk-comment-block-dwim
+      "cc" 'ahk-comment-dwim
+      "eb" 'ahk-run-script
+      "hh" 'ahk-lookup-web
+      "hH" 'ahk-lookup-chm)))

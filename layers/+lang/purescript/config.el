@@ -1,7 +1,6 @@
 ;;; config.el --- Purescript Layer config File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2015 Ryan L. Bell & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Ryan L. Bell
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -10,5 +9,12 @@
 ;;
 ;;; License: GPLv3
 
+(spacemacs|defvar-company-backends purescript-mode)
 
-;; Nothing here yet
+(spacemacs|define-jump-handlers purescript-mode)
+
+(defvar purescript-add-import-on-completion t
+  "If non-nil adds imports for completed identifiers")
+
+(defvar purescript-enable-rebuild-on-save nil
+  "If non-nil rebuild on save is enabled")
